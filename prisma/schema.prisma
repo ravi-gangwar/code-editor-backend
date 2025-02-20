@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  authToken     String?
+  submissions   Submission[]
+  executionLogs ExecutionLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Submission {
+  id            String         @id @default(uuid())
+  user          User           @relation(fields: [userId], references: [id])
+  userId        String
+  code          String
+  language      String
+  status        String
+  executionLogs ExecutionLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model ExecutionLog {
+  id            String     @id @default(uuid())
+  submission    Submission @relation(fields: [submissionId], references: [id])
+  submissionId  String
+  user          User       @relation(fields: [userId], references: [id])
+  userId        String
+  output        String?
+  error         String?
+  executionTime Float
+  createdAt     DateTime   @default(now())
+}

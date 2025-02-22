@@ -105,7 +105,7 @@ export const executeCode = async (req: Request, res: Response): Promise<void> =>
                 res.status(400).json({ error: "Duplicate submission" });
                 return;
             }
-            await prisma.submission.create({
+            const submission = await prisma.submission.create({
                 data: {
                     updatedAt: new Date(),
                     userId: req.user?.userId as string,
@@ -119,6 +119,7 @@ export const executeCode = async (req: Request, res: Response): Promise<void> =>
                 data: {
                     userId: req.user?.userId as string,
                     fingerprint: fingerprint,
+                    submissionId: submission.id,
                 },
             });
         }

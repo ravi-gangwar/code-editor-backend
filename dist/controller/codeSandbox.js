@@ -103,7 +103,7 @@ const executeCode = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 res.status(400).json({ error: "Duplicate submission" });
                 return;
             }
-            yield prisma.submission.create({
+            const submission = yield prisma.submission.create({
                 data: {
                     updatedAt: new Date(),
                     userId: (_c = req.user) === null || _c === void 0 ? void 0 : _c.userId,
@@ -116,6 +116,7 @@ const executeCode = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 data: {
                     userId: (_d = req.user) === null || _d === void 0 ? void 0 : _d.userId,
                     fingerprint: fingerprint,
+                    submissionId: submission.id,
                 },
             });
         }

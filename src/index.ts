@@ -16,15 +16,13 @@ wss.on('connection', (ws: WebSocket) => {
     });
 });
 
-
+app.use(express.json());
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "authorization"],
 }));
-
-app.use(express.json());
 
 app.use("/api/v1/code", codeRouter);
 app.use("/api/v1/auth", authRouter);

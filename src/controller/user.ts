@@ -39,16 +39,13 @@ const signup = async (req: Request, res: Response): Promise<void> => {
 // login
 const login = async (req: Request, res: Response) : Promise<void> => {
     const { email, password } = loginSchema.parse(req.body);
-    console.log(email, password);
     const user = await prisma.user.findUnique({ where: { email } });
-    console.log(user);
     if (user === null) {    
         res.status(401).json({ message: "Invalid credentials" });
         return;
     };
 
     const isPasswordValid = await verifyPassword(password, user.password);
-    console.log(isPasswordValid);
     if (!isPasswordValid) {
         res.status(401).json({ message: "Invalid credentials" });
         return;
@@ -113,22 +110,22 @@ const deleteUser = async (req: Request, res: Response): Promise<void> => {
 
 // get user with token
 const getUser = async (req: Request, res: Response): Promise<void> => {
-    const token = req.headers.authorization;
-    if (!token) {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const decoded = await verifyToken(token) as { userId: string };
+        const user = await prisma.user.findUnique({ where: { id: decoded.userId } }); 
+        if (!user) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        res.json({ data: { email: user.email, name: user.name } });
+    } catch (error) {
         res.status(401).json({ message: "Unauthorized" });
-        return;
     }
-    const decoded = await verifyToken(token);
-    if (typeof decoded === "string") {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-    }
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-    }
-    res.json({ data: { email: user.email, name: user.name } });
 };
 
 export { signup, login, resetPassword, sendResetPasswordEmail, deleteUser, getUser };

@@ -8,8 +8,16 @@ const code_1 = __importDefault(require("./routes/v1/code"));
 const user_1 = __importDefault(require("./routes/v1/user"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const cors_1 = __importDefault(require("cors"));
+const ws_1 = require("ws");
+const handleMessage_1 = __importDefault(require("./ws/handleMessage"));
 dotenv_1.default.config();
+const wss = new ws_1.WebSocketServer({ port: 8080 });
 const app = (0, express_1.default)();
+wss.on('connection', (ws) => {
+    ws.on('message', (message) => {
+        (0, handleMessage_1.default)(message.toString(), ws);
+    });
+});
 app.use((0, cors_1.default)({
     origin: "http://localhost:3000",
     credentials: true,

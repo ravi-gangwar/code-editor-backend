@@ -1,9 +1,12 @@
-import { z } from "zod";
-
-export const executionSchema = z.object({
-    code: z.string().min(1, "Code is required"),
-    language: z.enum(["python", "node", "cpp"], {
-        errorMap: () => ({ message: "Unsupported language. Use 'python', 'node', or 'cpp'." }),
-    }),
-    input: z.string().optional(),
-});
+export enum EventName {
+  JoinRoom = "join-room",
+  LeaveRoom = "leave-room",
+  SendMessage = "send-message",
+  CreateRoom = "create-room",
+  ReceivedMessage = "received-message",
+  Error = "error",
+  Execution = "execution",
+  Submission = "submission",
+  SetLanguage = "set-language",
+  SetOutput = "set-output",
+}

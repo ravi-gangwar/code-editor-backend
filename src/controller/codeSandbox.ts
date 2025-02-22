@@ -6,11 +6,12 @@ import { Request, Response } from "express";
 import langCmd from "../utils/langCmd";
 import { ExecuteSchema } from "../types/zod";
 import { PrismaClient } from "@prisma/client";
+import generateUniqueSubmissionFingerprint from "../lib/generateHash";
 
 const docker = new Docker();
 const prisma = new PrismaClient();
 
-const sandbox = async (req: Request, res: Response): Promise<void> => {
+export const executeCode = async (req: Request, res: Response): Promise<void> => {
     const validation = ExecuteSchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -88,7 +89,22 @@ const sandbox = async (req: Request, res: Response): Promise<void> => {
 
         await container.remove();
 
-        if(type === 'execution'){
+        if(type === 'submission'){
+            const fingerprint = await generateUniqueSubmissionFingerprint(req.user?.userId as string, code, Date.now(), language);
+
+            const existingFingerprint = await prisma.executionFingerprint.findFirst({
+                where: {
+                    fingerprint: fingerprint,
+                    userId: {
+                        not: req.user?.userId as string,
+                    },
+                },
+            });
+
+            if(existingFingerprint){
+                res.status(400).json({ error: "Duplicate submission" });
+                return;
+            }
             await prisma.submission.create({
                 data: {
                     updatedAt: new Date(),
@@ -96,6 +112,13 @@ const sandbox = async (req: Request, res: Response): Promise<void> => {
                     code: code,
                     language: language,
                     status: "success",
+                },
+            });
+
+            await prisma.executionFingerprint.create({
+                data: {
+                    userId: req.user?.userId as string,
+                    fingerprint: fingerprint,
                 },
             });
         }
@@ -111,4 +134,15 @@ const sandbox = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export default sandbox;
+
+export const getSubmissions = async (req: Request, res: Response): Promise<void> => {
+    const submissions = await prisma.submission.findMany({
+        where: {
+            userId: req.user?.userId as string,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    res.json(submissions);
+};

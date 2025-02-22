@@ -3,9 +3,20 @@ import codeRouter from "./routes/v1/code";
 import authRouter from "./routes/v1/user";
 import dotenv from "dotenv";
 import cors from "cors";
+import { WebSocketServer, WebSocket } from 'ws';
+import handleMessage from "./ws/handleMessage";
 dotenv.config();
 
+const wss = new WebSocketServer({ port: 8080 });
 const app = express();
+
+wss.on('connection', (ws: WebSocket) => {
+    ws.on('message', (message) => {
+        handleMessage(message.toString(), ws);
+    });
+});
+
+
 app.use(cors({
     origin: "http://localhost:3000",
     credentials: true,

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { login, resetPassword, sendResetPasswordEmail, signup, deleteUser, getUser } from "../../controller/user";
 
-const authRouter = Router();
+const authRouter = Router();;
 
 authRouter.post("/signup", signup);
 authRouter.post("/login", login);

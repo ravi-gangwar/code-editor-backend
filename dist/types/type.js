@@ -1,11 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.executionSchema = void 0;
-const zod_1 = require("zod");
-exports.executionSchema = zod_1.z.object({
-    code: zod_1.z.string().min(1, "Code is required"),
-    language: zod_1.z.enum(["python", "node", "cpp"], {
-        errorMap: () => ({ message: "Unsupported language. Use 'python', 'node', or 'cpp'." }),
-    }),
-    input: zod_1.z.string().optional(),
-});
+exports.EventName = void 0;
+var EventName;
+(function (EventName) {
+    EventName["JoinRoom"] = "join-room";
+    EventName["LeaveRoom"] = "leave-room";
+    EventName["SendMessage"] = "send-message";
+    EventName["CreateRoom"] = "create-room";
+    EventName["ReceivedMessage"] = "received-message";
+    EventName["Error"] = "error";
+    EventName["Execution"] = "execution";
+    EventName["Submission"] = "submission";
+    EventName["SetLanguage"] = "set-language";
+    EventName["SetOutput"] = "set-output";
+})(EventName || (exports.EventName = EventName = {}));

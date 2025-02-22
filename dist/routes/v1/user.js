@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const user_1 = require("../../controller/user");
 const authRouter = (0, express_1.Router)();
+;
 authRouter.post("/signup", user_1.signup);
 authRouter.post("/login", user_1.login);
 authRouter.post("/reset-password", user_1.resetPassword);

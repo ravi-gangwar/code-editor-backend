@@ -1,11 +1,13 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import codeRouter from "./routes/v1/code";
 import authRouter from "./routes/v1/user";
-import dotenv from "dotenv";
 import cors from "cors";
 import { WebSocketServer, WebSocket } from 'ws';
 import handleMessage from "./ws/handleMessage";
-dotenv.config();
+import { rateLimiter, authRateLimiter } from "./middleware/rateLiminting";
 
 const wss = new WebSocketServer({ port: 8080 });
 const app = express();
@@ -24,10 +26,10 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "authorization"],
 }));
 
-app.use("/api/v1/code", codeRouter);
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/code", rateLimiter, codeRouter);
+app.use("/api/v1/auth", authRateLimiter, authRouter);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

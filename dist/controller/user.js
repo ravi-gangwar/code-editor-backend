@@ -13,28 +13,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUser = exports.deleteUser = exports.sendResetPasswordEmail = exports.resetPassword = exports.login = exports.signup = void 0;
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const client_1 = require("@prisma/client");
 const zod_1 = require("../types/zod");
 const zod_2 = require("../types/zod");
-const emailTransporter_1 = __importDefault(require("../lib/emailTransporter"));
 const zod_3 = require("zod");
 const bcrypt_1 = require("../lib/bcrypt");
 const jwt_1 = require("../lib/jwt");
+const emailTransporter_1 = __importDefault(require("../lib/emailTransporter"));
 const prisma = new client_1.PrismaClient();
 // signup
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password, name } = zod_2.signupSchema.parse(req.body);
+        console.log(email, password, name);
         const existingUser = yield prisma.user.findUnique({ where: { email } });
+        console.log({ existingUser });
         if (existingUser) {
             res.status(400).json({ message: "User already exists" });
             return;
         }
         const hp = yield (0, bcrypt_1.hashedPassword)(password);
+        console.log(hp);
         const user = yield prisma.user.create({
             data: { email, password: hp, name },
         });
+        console.log(user);
         const token = yield (0, jwt_1.signToken)(user.id);
+        console.log(token);
         res.json({ token, data: { email: user.email, name: user.name, token } });
     }
     catch (error) {
@@ -82,24 +89,44 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 exports.resetPassword = resetPassword;
 // send reset password email
 const sendResetPasswordEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email } = zod_1.sendResetPasswordEmailSchema.parse(req.body);
-    const user = yield prisma.user.findUnique({ where: { email } });
-    if (!user) {
-        res.status(401).json({ message: "Invalid credentials" });
-        return;
+    try {
+        const { email } = zod_1.sendResetPasswordEmailSchema.parse(req.body);
+        const user = yield prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            res.status(401).json({ message: "Invalid credentials" });
+            return;
+        }
+        const token = yield (0, jwt_1.signToken)(user.id);
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+        // Send email using nodemailer
+        yield emailTransporter_1.default.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset Request',
+            text: `Click the link below to reset your password: ${resetLink}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Password Reset Request</h2>
+                    <p>Hello ${user.name},</p>
+                    <p>We received a request to reset your password. Click the button below to reset your password:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetLink}" 
+                           style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">
+                            Reset Password
+                        </a>
+                    </div>
+                    <p>If you didn't request this, you can safely ignore this email.</p>
+                    <p>This link will expire in 1 hour.</p>
+                    <p>Best regards,<br>Your App Team</p>
+                </div>
+            `
+        });
+        res.json({ message: "Reset password email sent successfully" });
     }
-    const token = yield (0, jwt_1.signToken)(user.id);
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Reset Password",
-        html: `
-            <p>Click <a href="${resetLink}">here</a> to reset your password.</p>
-        `,
-    };
-    yield emailTransporter_1.default.sendMail(mailOptions);
-    res.json({ message: "Reset password email sent" });
+    catch (error) {
+        console.error('Error sending reset password email:', error);
+        res.status(500).json({ message: "Failed to send reset password email" });
+    }
 });
 exports.sendResetPasswordEmail = sendResetPasswordEmail;
 // delete user with token

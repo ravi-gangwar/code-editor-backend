@@ -26,6 +26,10 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "authorization"],
 }));
 
+app.get("/", (req, res) => {
+    res.send("Hello World");
+});
+
 app.use("/api/v1/code", rateLimiter, codeRouter);
 app.use("/api/v1/auth", authRateLimiter, authRouter);
 

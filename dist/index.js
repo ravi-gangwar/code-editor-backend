@@ -26,9 +26,12 @@ app.use((0, cors_1.default)({
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "authorization"],
 }));
+app.get("/", (req, res) => {
+    res.send("Hello World");
+});
 app.use("/api/v1/code", rateLiminting_1.rateLimiter, code_1.default);
 app.use("/api/v1/auth", rateLiminting_1.authRateLimiter, user_1.default);
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

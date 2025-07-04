@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/code", rateLimiter, codeRouter);
 app.use("/api/v1/auth", authRateLimiter, authRouter);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

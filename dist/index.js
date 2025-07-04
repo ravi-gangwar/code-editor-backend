@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 });
 app.use("/api/v1/code", rateLiminting_1.rateLimiter, code_1.default);
 app.use("/api/v1/auth", rateLiminting_1.authRateLimiter, user_1.default);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

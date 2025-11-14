@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -12,6 +21,11 @@ const cors_1 = __importDefault(require("cors"));
 const ws_1 = require("ws");
 const handleMessage_1 = __importDefault(require("./ws/handleMessage"));
 const rateLiminting_1 = require("./middleware/rateLiminting");
+const passport_1 = __importDefault(require("passport"));
+const passport_google_oauth20_1 = require("passport-google-oauth20");
+const express_session_1 = __importDefault(require("express-session"));
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 const wss = new ws_1.WebSocketServer({ port: parseInt(process.env.WS_PORT || "5001") });
 const app = (0, express_1.default)();
 wss.on('connection', (ws) => {
@@ -22,14 +36,77 @@ wss.on('connection', (ws) => {
 });
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: "*",
+    origin: process.env.FRONTEND_URL || "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "authorization"],
 }));
+// Configure session middleware
+app.use((0, express_session_1.default)({
+    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+app.use(passport_1.default.initialize());
+app.use(passport_1.default.session());
+// Configure Google OAuth Strategy
+passport_1.default.use(new passport_google_oauth20_1.Strategy({
+    clientID: process.env.CLIENT_ID || "",
+    clientSecret: process.env.CLIENT_SECRET || "",
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "/api/v1/auth/google/callback"
+}, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
+    try {
+        const email = (_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value;
+        const name = profile.displayName || ((_c = profile.name) === null || _c === void 0 ? void 0 : _c.givenName) || "User";
+        if (!email) {
+            return done(new Error("No email found in Google profile"), undefined);
+        }
+        // Check if user exists
+        let user = yield prisma.user.findUnique({
+            where: { email }
+        });
+        // If user doesn't exist, create a new one
+        if (!user) {
+            user = yield prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    password: null // OAuth users don't have passwords
+                }
+            });
+        }
+        return done(null, user);
+    }
+    catch (error) {
+        return done(error, undefined);
+    }
+})));
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
+// Serialize user for session
+passport_1.default.serializeUser((user, done) => {
+    done(null, user.id);
+});
+// Deserialize user from session
+passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield prisma.user.findUnique({
+            where: { id },
+            select: { id: true, email: true, name: true }
+        });
+        done(null, user);
+    }
+    catch (error) {
+        done(error, undefined);
+    }
+}));
 app.use("/api/v1/code", rateLiminting_1.rateLimiter, code_1.default);
 app.use("/api/v1/auth", rateLiminting_1.authRateLimiter, user_1.default);
 const PORT = process.env.PORT || 5000;

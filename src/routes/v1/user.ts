@@ -1,7 +1,18 @@
 import { Router } from "express";
-import { login, resetPassword, sendResetPasswordEmail, signup, deleteUser, getUser } from "../../controller/user";
+import { login, resetPassword, sendResetPasswordEmail, signup, deleteUser, getUser, googleCallback } from "../../controller/user";
+import passport from "passport";
 
-const authRouter = Router();;
+const authRouter = Router();
+
+// Google OAuth routes
+authRouter.get("/google", passport.authenticate("google", {
+    scope: ["profile", "email"]
+}));
+
+authRouter.get("/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    googleCallback
+);
 
 authRouter.post("/signup", signup);
 authRouter.post("/login", login);

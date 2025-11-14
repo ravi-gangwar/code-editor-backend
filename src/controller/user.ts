@@ -8,6 +8,8 @@ import { ZodError } from "zod";
 import { hashedPassword, verifyPassword } from "../lib/bcrypt";
 import { signToken, verifyToken } from "../lib/jwt";
 import transporter from "../lib/emailTransporter";
+import passport from "passport";
+
 
 const prisma = new PrismaClient();
 
@@ -50,6 +52,11 @@ const login = async (req: Request, res: Response) : Promise<void> => {
         res.status(401).json({ message: "Invalid credentials" });
         return;
     };
+
+    if (!user.password) {
+        res.status(401).json({ message: "Invalid credentials" });
+        return;
+    }
 
     const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
@@ -153,4 +160,26 @@ const getUser = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export { signup, login, resetPassword, sendResetPasswordEmail, deleteUser, getUser };
+// Google OAuth callback handler
+const googleCallback = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const user = req.user as any;
+        
+        if (!user) {
+            res.status(401).json({ message: "Authentication failed" });
+            return;
+        }
+
+        // Generate JWT token
+        const token = await signToken(user.id);
+        
+        // Redirect to frontend with token or send JSON response
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        res.redirect(`${frontendUrl}/auth/callback?token=${token}&email=${user.email}&name=${user.name}`);
+    } catch (error) {
+        console.error("Google OAuth callback error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export { signup, login, resetPassword, sendResetPasswordEmail, deleteUser, getUser, googleCallback };

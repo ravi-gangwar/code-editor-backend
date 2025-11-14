@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUser = exports.deleteUser = exports.sendResetPasswordEmail = exports.resetPassword = exports.login = exports.signup = void 0;
+exports.googleCallback = exports.getUser = exports.deleteUser = exports.sendResetPasswordEmail = exports.resetPassword = exports.login = exports.signup = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const client_1 = require("@prisma/client");
@@ -63,6 +63,10 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return;
     }
     ;
+    if (!user.password) {
+        res.status(401).json({ message: "Invalid credentials" });
+        return;
+    }
     const isPasswordValid = yield (0, bcrypt_1.verifyPassword)(password, user.password);
     if (!isPasswordValid) {
         res.status(401).json({ message: "Invalid credentials" });
@@ -164,3 +168,23 @@ const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getUser = getUser;
+// Google OAuth callback handler
+const googleCallback = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = req.user;
+        if (!user) {
+            res.status(401).json({ message: "Authentication failed" });
+            return;
+        }
+        // Generate JWT token
+        const token = yield (0, jwt_1.signToken)(user.id);
+        // Redirect to frontend with token or send JSON response
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        res.redirect(`${frontendUrl}/auth/callback?token=${token}&email=${user.email}&name=${user.name}`);
+    }
+    catch (error) {
+        console.error("Google OAuth callback error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+exports.googleCallback = googleCallback;

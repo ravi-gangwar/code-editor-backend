@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 // Create a rate limiter middleware
 export const rateLimiter = rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
-    max: 10, // Limit each IP to 10 requests per windowMs
+    max: 30, // Limit each IP to 30 requests per windowMs
     message: { message: 'Too many requests from this IP, please try again after 5 minutes' },
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers

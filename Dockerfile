@@ -1,6 +1,25 @@
 FROM node:18-alpine
 
-RUN apk add --no-cache openjdk17 python3
-
 WORKDIR /app
-CMD ["node", "/app/script.js"]
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies
+RUN npm install
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Copy source code
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Expose port
+EXPOSE 5000
+
+# Start the application
+CMD ["node", "dist/index.js"]

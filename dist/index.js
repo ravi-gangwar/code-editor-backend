@@ -18,8 +18,6 @@ const express_1 = __importDefault(require("express"));
 const code_1 = __importDefault(require("./routes/v1/code"));
 const user_1 = __importDefault(require("./routes/v1/user"));
 const cors_1 = __importDefault(require("cors"));
-const ws_1 = require("ws");
-const handleMessage_1 = __importDefault(require("./ws/handleMessage"));
 const rateLiminting_1 = require("./middleware/rateLiminting");
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = require("passport-google-oauth20");
@@ -27,14 +25,7 @@ const express_session_1 = __importDefault(require("express-session"));
 const connect_pg_simple_1 = __importDefault(require("connect-pg-simple"));
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-const wss = new ws_1.WebSocketServer({ port: parseInt(process.env.WS_PORT || "5001") });
 const app = (0, express_1.default)();
-wss.on('connection', (ws) => {
-    ws.on('message', (message) => {
-        (0, handleMessage_1.default)(message.toString(), ws);
-    });
-    console.log("New connection");
-});
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL || "*",
@@ -117,7 +108,7 @@ passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 
         done(error, undefined);
     }
 }));
-app.use("/api/v1/code", rateLiminting_1.rateLimiter, code_1.default);
+app.use("/api/v1/code", code_1.default);
 app.use("/api/v1/auth", rateLiminting_1.authRateLimiter, user_1.default);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

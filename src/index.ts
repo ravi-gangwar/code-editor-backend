@@ -5,9 +5,7 @@ import express from "express";
 import codeRouter from "./routes/v1/code";
 import authRouter from "./routes/v1/user";
 import cors from "cors";
-import { WebSocketServer, WebSocket } from 'ws';
-import handleMessage from "./ws/handleMessage";
-import { rateLimiter, authRateLimiter } from "./middleware/rateLiminting";
+import { authRateLimiter } from "./middleware/rateLiminting";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
@@ -15,16 +13,7 @@ import connectPgSimple from "connect-pg-simple";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
-const wss = new WebSocketServer({ port: parseInt(process.env.WS_PORT || "5001") });
 const app = express();
-
-wss.on('connection', (ws: WebSocket) => {
-    ws.on('message', (message: Buffer) => {
-        handleMessage(message.toString(), ws);
-    });
-    console.log("New connection");
-});
 
 
 app.use(express.json());
@@ -96,7 +85,7 @@ passport.use(new GoogleStrategy({
     }
 }));
 
-app.get("/", (req, res) => {
+app.get("/", (req: express.Request, res: express.Response) => {
     res.send("Hello World");
 });
 
@@ -118,7 +107,7 @@ passport.deserializeUser(async (id: string, done: (err: any, user?: any) => void
     }
 });
 
-app.use("/api/v1/code", rateLimiter, codeRouter);
+app.use("/api/v1/code", codeRouter);
 app.use("/api/v1/auth", authRateLimiter, authRouter);
 
 const PORT = process.env.PORT || 5000;

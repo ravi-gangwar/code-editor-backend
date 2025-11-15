@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "npm install && npx tsc",
+    "build": "npm install --include=dev && npx tsc",
     "generate": "npx prisma generate",
     "migrate": "npx prisma migrate dev",
     "migrate:create": "npx prisma migrate dev --name",

@@ -20,7 +20,7 @@ const wss = new WebSocketServer({ port: parseInt(process.env.WS_PORT || "5001") 
 const app = express();
 
 wss.on('connection', (ws: WebSocket) => {
-    ws.on('message', (message) => {
+    ws.on('message', (message: Buffer) => {
         handleMessage(message.toString(), ws);
     });
     console.log("New connection");
@@ -65,7 +65,7 @@ passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID || "",
     clientSecret: process.env.CLIENT_SECRET || "",
     callbackURL: process.env.GOOGLE_CALLBACK_URL || "/api/v1/auth/google/callback"
-}, async (accessToken, refreshToken, profile, done) => {
+}, async (accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void) => {
     try {
         const email = profile.emails?.[0]?.value;
         const name = profile.displayName || profile.name?.givenName || "User";
@@ -101,12 +101,12 @@ app.get("/", (req, res) => {
 });
 
 // Serialize user for session
-passport.serializeUser((user: any, done) => {
+passport.serializeUser((user: any, done: (err: any, id?: string) => void) => {
     done(null, user.id);
 });
 
 // Deserialize user from session
-passport.deserializeUser(async (id: string, done) => {
+passport.deserializeUser(async (id: string, done: (err: any, user?: any) => void) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id },

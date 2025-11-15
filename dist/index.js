@@ -24,6 +24,7 @@ const rateLiminting_1 = require("./middleware/rateLiminting");
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = require("passport-google-oauth20");
 const express_session_1 = __importDefault(require("express-session"));
+const connect_pg_simple_1 = __importDefault(require("connect-pg-simple"));
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const wss = new ws_1.WebSocketServer({ port: parseInt(process.env.WS_PORT || "5001") });
@@ -41,15 +42,24 @@ app.use((0, cors_1.default)({
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "authorization"],
 }));
+// Configure PostgreSQL session store
+const PgSession = (0, connect_pg_simple_1.default)(express_session_1.default);
+const sessionStore = new PgSession({
+    conString: process.env.DATABASE_URL,
+    tableName: "user_sessions", // Optional: custom table name
+    createTableIfMissing: true, // Automatically create the sessions table
+});
 // Configure session middleware
 app.use((0, express_session_1.default)({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     }
 }));
 app.use(passport_1.default.initialize());

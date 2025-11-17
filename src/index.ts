@@ -26,7 +26,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 });
 
 app.use("/api/v1/code", codeRouter);
-app.use("/api/v1/auth", authRateLimiter, authRouter);
+app.use("/api/v1/auth", authRouter);
 
 // Initialize WebSocket server
 initializeWebSocket(server);
